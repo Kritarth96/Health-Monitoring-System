@@ -16,19 +16,21 @@ A real-time health monitoring system that integrates Arduino-based biomedical se
 
 - **Frontend:** HTML, CSS, JavaScript, Chart.js
 - **Backend:** Python Flask
-- **Microcontroller:** Arduino Nano/Uno (tested with)
+- **Microcontroller:** ESP32 (tested with)
 - **Sensors Used:**
-  - ECG sensor (e.g., AD8232)
-  - Pulse oximeter (e.g., MAX30100 or MAX30102)
-  - LM35 or DS18B20 temperature sensor
-  - Accelerometer (e.g., ADXL345, MPU6050)
+  - ECG sensor (AD8232)
+  - Pulse oximeter (MAX30102)
+  - LM35 temperature sensor
+  - Accelerometer (MPU6050)
 
 ## 📂 Project Structure
-├── app.py # Flask backend server
-├── index.html # Web dashboard interface
-├── IOT_PROJECT.ino # Arduino sketch for health data
-├── ecg.ino # ECG-specific code
-├── falldetection.ino # Fall detection logic
+
+```plaintext
+├── app.py              # Flask backend server
+├── index.html          # Web dashboard interface
+├── IOT_PROJECT.ino     # Arduino sketch for health data
+├── ecg.ino             # ECG-specific code
+├── falldetection.ino   # Fall detection logic
 
 
 ## 📡 How It Works
