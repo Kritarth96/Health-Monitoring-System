@@ -19,7 +19,7 @@ A real-time health monitoring system that integrates Arduino-based biomedical se
 - **Microcontroller:** ESP32 (tested with)
 - **Sensors Used:**
   - ECG sensor (AD8232)
-  - Pulse oximeter (MAX30102)
+  - Pulse oximeter (MAX30100)
   - LM35 temperature sensor
   - Accelerometer (MPU6050)
 
