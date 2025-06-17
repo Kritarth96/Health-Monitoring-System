@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>📊 IoT Health Monitoring Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --accent: #10b981;
+      --warn: #ef4444;
+      --bg-light: #f8fafc;
+      --bg-dark: #1f2937;
+      --card-light: #ffffff;
+      --card-dark: #111827;
+      --text-light: #1e293b;
+      --text-dark: #e2e8f0;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-light);
+      transition: background 0.3s, color 0.3s;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--primary);
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    .chart-container {
+      background: var(--card-light);
+      padding: 25px;
+      margin-bottom: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      transition: background 0.3s;
+    }
+
+    .chart-container h2 {
+      margin-bottom: 10px;
+      font-size: 1.3rem;
+      color: var(--text-light);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 300px !important;
+    }
+
+    #alerts {
+      padding: 15px;
+      background: #fef2f2;
+      color: var(--warn);
+      font-weight: bold;
+      border-left: 5px solid var(--warn);
+      border-radius: 10px;
+      margin-bottom: 25px;
+      display: none;
+      transition: all 0.3s;
+    }
+
+    .toggle-btn {
+      background: var(--primary);
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 0 auto 40px;
+      display: block;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+
+    .toggle-btn:hover {
+      background: #2563eb;
+    }
+
+    #fallStatus {
+      font-size: 1.6rem;
+      font-weight: 600;
+      text-align: center;
+      padding: 10px;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+
+    .status-ok {
+      background-color: #ecfdf5;
+      color: var(--accent);
+    }
+
+    .status-warn {
+      background-color: #fef2f2;
+      color: var(--warn);
+    }
+
+    .dark-mode {
+      background-color: var(--bg-dark);
+      color: var(--text-dark);
+    }
+
+    .dark-mode .chart-container {
+      background: var(--card-dark);
+      box-shadow: 0 0 10px #000;
+    }
+
+    .dark-mode #alerts {
+      background-color: #2f2f2f;
+      color: #ff6b6b;
+    }
+
+    .dark-mode h2 {
+      color: var(--text-dark);
+    }
+  </style>
+</head>
+<body>
+  <h1>📡 IoT Health Monitoring Dashboard</h1>
+  <button class="toggle-btn" onclick="toggleMode()">🌗 Toggle Theme</button>
+
+
+
+    <div class="chart-container">
+      <h2>ECG (mV)</h2>
+      <canvas id="ecgChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h2>SpO₂ (%)</h2>
+      <canvas id="spo2Chart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h2>Heart Rate (BPM)</h2>
+      <canvas id="heartRateChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h2>Temperature (°C)</h2>
+      <canvas id="tempChart"></canvas>
+    </div>
+
+    <div class="chart-container">
+      <h2>Fall Detection</h2>
+      <p id="fallStatus" class="status-ok">Checking...</p>
+    </div>
+  </div>
+
+  <script>
+    let isDark = false;
+
+    function toggleMode() {
+      document.body.classList.toggle("dark-mode");
+      isDark = !isDark;
+    }
+
+    const createChart = (ctx, label, color) =>
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label,
+            data: [],
+            borderColor: color,
+            backgroundColor: color + '33',
+            tension: 0.15,
+            fill: true,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          animation: false,
+          scales: {
+            x: { title: { display: true, text: 'Time' } },
+            y: { beginAtZero: false }
+          }
+        }
+      });
+
+    const ecgChart = createChart(document.getElementById("ecgChart"), "ECG", "#ef4444");
+    const spo2Chart = createChart(document.getElementById("spo2Chart"), "SpO₂", "#3b82f6");
+    const heartRateChart = createChart(document.getElementById("heartRateChart"), "Heart Rate", "#10b981");
+    const tempChart = createChart(document.getElementById("tempChart"), "Temperature", "#f59e0b");
+
+    function updateChart(chart, labels, data) {
+      chart.data.labels = labels;
+      chart.data.datasets[0].data = data;
+      chart.update('none');
+    }
+
+    async function fetchData() {
+      try {
+        const res = await fetch("/get_health_data");
+        const raw = await res.json();
+
+        if (raw.length === 0) return;
+
+        const time = raw.map(row => new Date(row[0]).toLocaleTimeString());
+        const ecg = raw.map(r => r[1] * (3.3 / 4095) * 1000);
+        const spo2 = raw.map(r => r[2]);
+        const heart = raw.map(r => r[3]);
+        const temp = raw.map(r => r[4]);
+
+        updateChart(ecgChart, time, ecg);
+        updateChart(spo2Chart, time, spo2);
+        updateChart(heartRateChart, time, heart);
+        updateChart(tempChart, time, temp);
+
+        const fallDetected = raw[raw.length - 1][10];
+        const fallStatus = document.getElementById("fallStatus");
+        fallStatus.textContent = fallDetected ? "no Fall Detected!" : "✅ No Fall Detected";
+        fallStatus.className = fallDetected ? "status-ok" : "status-ok";
+
+        const alerts = raw
+          .filter(r => r[5] || r[10])
+          .map(r => `${new Date(r[0]).toLocaleTimeString()} - ${r[5] ? "🤒 Fever detected!" : "no Fall detected!"}`);
+
+        const alertBox = document.getElementById("alerts");
+        alertBox.innerHTML = alerts.length ? alerts.join("<br>") : "";
+        alertBox.style.display = alerts.length ? "block" : "none";
+
+      } catch (e) {
+        console.error("Data fetch failed", e);
+      }
+    }
+
+    setInterval(fetchData, 2000);
+    fetchData();
+  </script>
+</body>
+</html>
