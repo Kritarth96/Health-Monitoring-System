@@ -32,7 +32,7 @@ A real-time health monitoring system that integrates Arduino-based biomedical se
 ├── ecg.ino             # ECG-specific code
 ├── falldetection.ino   # Fall detection logic
 
-
+```
 ## 📡 How It Works
 
 1. Arduino reads data from sensors and sends it to the Flask server via HTTP POST.
